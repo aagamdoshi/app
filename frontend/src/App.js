@@ -14,6 +14,7 @@ function App() {
   const [dayOfWeekData, setDayOfWeekData] = useState(null);
   const [streakData, setStreakData] = useState(null);
   const [monthlyData, setMonthlyData] = useState(null);
+  const [calendarData, setCalendarData] = useState(null);
 
   // Fetch today's count
   const fetchTodayStats = async () => {
