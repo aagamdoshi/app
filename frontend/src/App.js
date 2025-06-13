@@ -66,6 +66,17 @@ function App() {
     }
   };
 
+  // Fetch calendar heatmap data
+  const fetchCalendarData = async () => {
+    try {
+      // Get current month by default
+      const response = await axios.get(`${API}/stats/calendar`);
+      setCalendarData(response.data);
+    } catch (error) {
+      console.error("Error fetching calendar data:", error);
+    }
+  };
+
   // Record a bad deed
   const recordBadDeed = async () => {
     if (isRecording) return; // Prevent double-clicks
