@@ -35,6 +35,36 @@ function App() {
     }
   };
 
+  // Fetch day-of-week analysis
+  const fetchDayOfWeekData = async () => {
+    try {
+      const response = await axios.get(`${API}/stats/day-of-week`);
+      setDayOfWeekData(response.data);
+    } catch (error) {
+      console.error("Error fetching day-of-week data:", error);
+    }
+  };
+
+  // Fetch streak analysis
+  const fetchStreakData = async () => {
+    try {
+      const response = await axios.get(`${API}/stats/streaks`);
+      setStreakData(response.data);
+    } catch (error) {
+      console.error("Error fetching streak data:", error);
+    }
+  };
+
+  // Fetch monthly data
+  const fetchMonthlyData = async () => {
+    try {
+      const response = await axios.get(`${API}/stats/monthly?months=6`);
+      setMonthlyData(response.data);
+    } catch (error) {
+      console.error("Error fetching monthly data:", error);
+    }
+  };
+
   // Record a bad deed
   const recordBadDeed = async () => {
     if (isRecording) return; // Prevent double-clicks
