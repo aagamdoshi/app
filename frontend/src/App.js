@@ -232,6 +232,100 @@ function App() {
   // Patterns Tab Content
   const PatternsContent = () => (
     <div className="max-w-6xl mx-auto space-y-8">
+      {/* Calendar Heatmap */}
+      {calendarData && (
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+            📅 {calendarData.month_name} Calendar
+          </h2>
+          
+          {/* Calendar Grid */}
+          <div className="mb-6">
+            {/* Days of week header */}
+            <div className="grid grid-cols-7 gap-2 mb-2">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <div key={day} className="text-center text-sm font-medium text-gray-600 py-2">
+                  {day}
+                </div>
+              ))}
+            </div>
+            
+            {/* Calendar dates */}
+            <div className="grid grid-cols-7 gap-2">
+              {/* Empty cells for days before month starts */}
+              {Array.from({ length: (calendarData.month_start_day + 1) % 7 }, (_, i) => (
+                <div key={`empty-${i}`} className="aspect-square"></div>
+              ))}
+              
+              {/* Calendar days */}
+              {calendarData.calendar_data.map((day) => (
+                <div
+                  key={day.date}
+                  className={`aspect-square rounded-lg flex items-center justify-center text-sm font-medium border-2 transition-all duration-200 hover:scale-110 cursor-pointer ${
+                    day.count === 0
+                      ? 'bg-green-100 border-green-200 text-green-800 hover:bg-green-200'
+                      : day.count <= 2
+                      ? 'bg-yellow-100 border-yellow-200 text-yellow-800 hover:bg-yellow-200'
+                      : day.count <= 5
+                      ? 'bg-orange-100 border-orange-200 text-orange-800 hover:bg-orange-200'
+                      : 'bg-red-100 border-red-200 text-red-800 hover:bg-red-200'
+                  }`}
+                  title={`${day.date}: ${day.count} bad deed${day.count !== 1 ? 's' : ''}`}
+                >
+                  <div className="text-center">
+                    <div className="text-xs">{day.day}</div>
+                    {day.count > 0 && (
+                      <div className="text-xs font-bold">{day.count}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Calendar Legend */}
+          <div className="flex items-center justify-center space-x-4 mb-4">
+            <span className="text-sm text-gray-600">Less</span>
+            <div className="flex space-x-1">
+              <div className="w-4 h-4 rounded border-2 bg-green-100 border-green-200"></div>
+              <div className="w-4 h-4 rounded border-2 bg-yellow-100 border-yellow-200"></div>
+              <div className="w-4 h-4 rounded border-2 bg-orange-100 border-orange-200"></div>
+              <div className="w-4 h-4 rounded border-2 bg-red-100 border-red-200"></div>
+            </div>
+            <span className="text-sm text-gray-600">More</span>
+          </div>
+
+          {/* Calendar Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 rounded-lg p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-800">{calendarData.stats.total_bad_deeds}</div>
+              <div className="text-sm text-gray-600">Total Bad Deeds</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{calendarData.stats.clean_days}</div>
+              <div className="text-sm text-gray-600">Clean Days</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-red-600">{calendarData.stats.days_with_bad_deeds}</div>
+              <div className="text-sm text-gray-600">Days with Issues</div>
+            </div>
+            <div className="text-center">
+              {calendarData.stats.worst_day ? (
+                <>
+                  <div className="text-2xl font-bold text-red-600">{calendarData.stats.worst_day.count}</div>
+                  <div className="text-sm text-gray-600">Worst Day ({calendarData.stats.worst_day.day}th)</div>
+                </>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-green-600">0</div>
+                  <div className="text-sm text-gray-600">No Bad Days!</div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Day of Week Analysis */}
       {dayOfWeekData && (
         <div className="bg-white rounded-2xl shadow-lg p-6">
