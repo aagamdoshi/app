@@ -83,6 +83,33 @@ class BadDeedsAPITester:
             f"bad-deeds?limit={limit}",
             200
         )
+        
+    def test_get_day_of_week_analysis(self):
+        """Test getting day-of-week pattern analysis"""
+        return self.run_test(
+            "Get Day-of-Week Analysis",
+            "GET",
+            "stats/day-of-week",
+            200
+        )
+        
+    def test_get_streak_analysis(self):
+        """Test getting streak analysis"""
+        return self.run_test(
+            "Get Streak Analysis",
+            "GET",
+            "stats/streaks",
+            200
+        )
+        
+    def test_get_monthly_stats(self, months=6):
+        """Test getting monthly statistics"""
+        return self.run_test(
+            "Get Monthly Stats",
+            "GET",
+            f"stats/monthly?months={months}",
+            200
+        )
 
 def main():
     # Setup
