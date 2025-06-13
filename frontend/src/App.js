@@ -87,12 +87,18 @@ function App() {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([fetchTodayStats(), fetchRecentStats()]);
+      if (activeTab === 'dashboard') {
+        await Promise.all([fetchTodayStats(), fetchRecentStats()]);
+      } else if (activeTab === 'patterns') {
+        await Promise.all([fetchDayOfWeekData(), fetchStreakData()]);
+      } else if (activeTab === 'trends') {
+        await fetchMonthlyData();
+      }
       setLoading(false);
     };
     
     loadData();
-  }, []);
+  }, [activeTab]);
 
   if (loading) {
     return (
