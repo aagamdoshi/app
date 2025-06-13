@@ -10,6 +10,10 @@ function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [recentStats, setRecentStats] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [dayOfWeekData, setDayOfWeekData] = useState(null);
+  const [streakData, setStreakData] = useState(null);
+  const [monthlyData, setMonthlyData] = useState(null);
 
   // Fetch today's count
   const fetchTodayStats = async () => {
