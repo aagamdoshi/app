@@ -404,7 +404,7 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
             Bad Deeds Tracker
           </h1>
@@ -413,102 +413,34 @@ function App() {
           </p>
         </div>
 
-        {/* Main Counter Section */}
-        <div className="max-w-md mx-auto mb-12">
-          <div className="bg-white rounded-3xl shadow-xl p-8 text-center">
-            <div className="mb-6">
-              <div className="text-6xl font-bold text-red-500 mb-2">
-                {todayCount}
-              </div>
-              <div className="text-lg text-gray-600">
-                Bad deed{todayCount !== 1 ? 's' : ''} today
-              </div>
-              <div className="text-sm text-gray-500 mt-1">
-                {new Date().toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
-              </div>
-            </div>
+        {/* Tab Navigation */}
+        <TabNavigation />
 
-            {/* Record Button */}
-            <button
-              onClick={recordBadDeed}
-              disabled={isRecording}
-              className={`w-full py-4 px-8 rounded-2xl text-white font-semibold text-lg transition-all duration-200 transform ${
-                isRecording
-                  ? 'bg-gray-400 scale-95 cursor-not-allowed'
-                  : 'bg-red-500 hover:bg-red-600 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl'
-              }`}
-            >
-              {isRecording ? 'Recording...' : 'Record Bad Deed'}
-            </button>
-          </div>
-        </div>
+        {/* Tab Content */}
+        {activeTab === 'dashboard' && <DashboardContent />}
+        {activeTab === 'patterns' && <PatternsContent />}
+        {activeTab === 'trends' && <TrendsContent />}
 
-        {/* Recent Trend Mini-Dashboard */}
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-              This Week's Pattern
-            </h2>
-            
-            <div className="grid grid-cols-7 gap-2 md:gap-4">
-              {recentStats.map((stat, index) => (
-                <div key={stat.date} className="text-center">
-                  <div className="text-xs md:text-sm font-medium text-gray-600 mb-2">
-                    {stat.day_of_week.slice(0, 3)}
-                  </div>
-                  <div 
-                    className={`w-8 h-8 md:w-12 md:h-12 mx-auto rounded-full flex items-center justify-center text-white font-bold text-sm md:text-base ${
-                      stat.count === 0 
-                        ? 'bg-green-400' 
-                        : stat.count <= 2 
-                        ? 'bg-yellow-400' 
-                        : stat.count <= 5 
-                        ? 'bg-orange-500' 
-                        : 'bg-red-500'
-                    }`}
-                  >
-                    {stat.count}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {new Date(stat.date).getDate()}
-                  </div>
+        {/* Motivational Message - only show on dashboard */}
+        {activeTab === 'dashboard' && (
+          <div className="max-w-2xl mx-auto mt-12 text-center">
+            <div className="bg-white/50 backdrop-blur rounded-2xl p-6">
+              {todayCount === 0 ? (
+                <div className="text-green-600 font-medium">
+                  🎉 Great job! You're having a clean day so far. Keep it up!
                 </div>
-              ))}
-            </div>
-            
-            <div className="mt-6 text-center">
-              <div className="text-sm text-gray-600">
-                Total this week: <span className="font-bold text-red-500">
-                  {recentStats.reduce((sum, stat) => sum + stat.count, 0)}
-                </span>
-              </div>
+              ) : todayCount <= 2 ? (
+                <div className="text-yellow-600 font-medium">
+                  ⚠️ You've had {todayCount} misstep{todayCount > 1 ? 's' : ''} today. Tomorrow is a new chance!
+                </div>
+              ) : (
+                <div className="text-red-600 font-medium">
+                  🔄 Today has been challenging with {todayCount} bad deeds. Remember, tracking is the first step to improvement.
+                </div>
+              )}
             </div>
           </div>
-        </div>
-
-        {/* Motivational Message */}
-        <div className="max-w-2xl mx-auto mt-12 text-center">
-          <div className="bg-white/50 backdrop-blur rounded-2xl p-6">
-            {todayCount === 0 ? (
-              <div className="text-green-600 font-medium">
-                🎉 Great job! You're having a clean day so far. Keep it up!
-              </div>
-            ) : todayCount <= 2 ? (
-              <div className="text-yellow-600 font-medium">
-                ⚠️ You've had {todayCount} misstep{todayCount > 1 ? 's' : ''} today. Tomorrow is a new chance!
-              </div>
-            ) : (
-              <div className="text-red-600 font-medium">
-                🔄 Today has been challenging with {todayCount} bad deeds. Remember, tracking is the first step to improvement.
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
