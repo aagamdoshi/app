@@ -102,7 +102,7 @@ function App() {
       if (activeTab === 'dashboard') {
         await Promise.all([fetchTodayStats(), fetchRecentStats()]);
       } else if (activeTab === 'patterns') {
-        await Promise.all([fetchDayOfWeekData(), fetchStreakData()]);
+        await Promise.all([fetchDayOfWeekData(), fetchStreakData(), fetchCalendarData()]);
       } else if (activeTab === 'trends') {
         await fetchMonthlyData();
       }
