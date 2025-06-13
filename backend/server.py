@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -6,9 +6,10 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
 import uuid
-from datetime import datetime
+from datetime import datetime, date, timedelta
+import pytz
 
 
 ROOT_DIR = Path(__file__).parent
@@ -27,30 +28,144 @@ api_router = APIRouter(prefix="/api")
 
 
 # Define Models
-class StatusCheck(BaseModel):
+class BadDeed(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+    user_id: Optional[str] = None  # For future multi-user support
+    notes: Optional[str] = None    # Optional notes about the bad deed
 
-class StatusCheckCreate(BaseModel):
-    client_name: str
+class BadDeedResponse(BaseModel):
+    id: str
+    timestamp: datetime
+    user_id: Optional[str] = None
+    notes: Optional[str] = None
 
-# Add your routes to the router instead of directly to app
+class BadDeedCreate(BaseModel):
+    notes: Optional[str] = None
+
+class StatsResponse(BaseModel):
+    count: int
+    date: str
+    day_of_week: str
+
+
+# Helper functions
+def get_today_start_end():
+    """Get start and end of today in UTC"""
+    now = datetime.utcnow()
+    today_start = datetime.combine(now.date(), datetime.min.time())
+    today_end = datetime.combine(now.date(), datetime.max.time())
+    return today_start, today_end
+
+
+# API Routes
 @api_router.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Bad Deeds Tracker API"}
 
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.dict()
-    status_obj = StatusCheck(**status_dict)
-    _ = await db.status_checks.insert_one(status_obj.dict())
-    return status_obj
+@api_router.post("/bad-deed", response_model=BadDeedResponse)
+async def record_bad_deed(input: BadDeedCreate):
+    """Record a new bad deed"""
+    try:
+        bad_deed = BadDeed(**input.dict())
+        await db.bad_deeds.insert_one(bad_deed.dict())
+        return BadDeedResponse(**bad_deed.dict())
+    except Exception as e:
+        logging.error(f"Error recording bad deed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to record bad deed")
 
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    status_checks = await db.status_checks.find().to_list(1000)
-    return [StatusCheck(**status_check) for status_check in status_checks]
+@api_router.get("/bad-deeds", response_model=List[BadDeedResponse])
+async def get_bad_deeds(limit: int = 100):
+    """Get all bad deeds (most recent first)"""
+    try:
+        bad_deeds = await db.bad_deeds.find().sort("timestamp", -1).limit(limit).to_list(limit)
+        return [BadDeedResponse(**deed) for deed in bad_deeds]
+    except Exception as e:
+        logging.error(f"Error fetching bad deeds: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch bad deeds")
+
+@api_router.get("/stats/today", response_model=StatsResponse)
+async def get_today_stats():
+    """Get today's bad deed count"""
+    try:
+        today_start, today_end = get_today_start_end()
+        
+        count = await db.bad_deeds.count_documents({
+            "timestamp": {
+                "$gte": today_start,
+                "$lte": today_end
+            }
+        })
+        
+        today = datetime.utcnow().date()
+        day_of_week = today.strftime("%A")
+        
+        return StatsResponse(
+            count=count,
+            date=today.isoformat(),
+            day_of_week=day_of_week
+        )
+    except Exception as e:
+        logging.error(f"Error getting today's stats: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get today's stats")
+
+@api_router.get("/stats/recent")
+async def get_recent_stats(days: int = 7):
+    """Get stats for recent days"""
+    try:
+        end_date = datetime.utcnow().date()
+        start_date = end_date - timedelta(days=days-1)
+        
+        # Create aggregation pipeline
+        pipeline = [
+            {
+                "$match": {
+                    "timestamp": {
+                        "$gte": datetime.combine(start_date, datetime.min.time()),
+                        "$lte": datetime.combine(end_date, datetime.max.time())
+                    }
+                }
+            },
+            {
+                "$group": {
+                    "_id": {
+                        "$dateToString": {
+                            "format": "%Y-%m-%d",
+                            "date": "$timestamp"
+                        }
+                    },
+                    "count": {"$sum": 1}
+                }
+            },
+            {
+                "$sort": {"_id": 1}
+            }
+        ]
+        
+        results = await db.bad_deeds.aggregate(pipeline).to_list(days)
+        
+        # Fill in missing days with 0 count
+        stats = []
+        current_date = start_date
+        results_dict = {result["_id"]: result["count"] for result in results}
+        
+        while current_date <= end_date:
+            date_str = current_date.isoformat()
+            count = results_dict.get(date_str, 0)
+            day_of_week = current_date.strftime("%A")
+            
+            stats.append({
+                "date": date_str,
+                "count": count,
+                "day_of_week": day_of_week
+            })
+            current_date += timedelta(days=1)
+        
+        return {"stats": stats}
+    except Exception as e:
+        logging.error(f"Error getting recent stats: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get recent stats")
+
 
 # Include the router in the main app
 app.include_router(api_router)
