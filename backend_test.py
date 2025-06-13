@@ -160,6 +160,44 @@ def main():
     if success:
         print(f"Retrieved {len(bad_deeds)} bad deeds")
     
+    # Test new analytics endpoints
+    print("\n🧪 Testing New Analytics Endpoints 🧪")
+    print("====================================")
+    
+    # Test day-of-week analysis
+    success, day_analysis = tester.test_get_day_of_week_analysis()
+    if success:
+        day_data = day_analysis.get('day_analysis', [])
+        insights = day_analysis.get('insights', [])
+        print(f"Retrieved day-of-week analysis for {len(day_data)} days")
+        print(f"Found {len(insights)} insights")
+        
+        if len(day_data) == 7:
+            print("✅ Received analysis for all 7 days of the week")
+        else:
+            print(f"❌ Expected 7 days, got {len(day_data)}")
+    
+    # Test streak analysis
+    success, streak_data = tester.test_get_streak_analysis()
+    if success:
+        current_streak = streak_data.get('current_streak', {}).get('days', 0)
+        longest_streak = streak_data.get('longest_streak', {}).get('days', 0)
+        print(f"Current streak: {current_streak} days")
+        print(f"Longest streak: {longest_streak} days")
+    
+    # Test monthly stats
+    success, monthly_data = tester.test_get_monthly_stats()
+    if success:
+        monthly_stats = monthly_data.get('monthly_stats', [])
+        trend = monthly_data.get('trend', 'unknown')
+        print(f"Retrieved monthly stats for {len(monthly_stats)} months")
+        print(f"Overall trend: {trend}")
+        
+        if len(monthly_stats) == 6:
+            print("✅ Received stats for 6 months as requested")
+        else:
+            print(f"❌ Expected 6 months, got {len(monthly_stats)}")
+    
     # Print results
     print("\n📊 Test Results 📊")
     print("=================")
