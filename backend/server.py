@@ -431,6 +431,99 @@ async def get_monthly_stats(months: int = 12):
         logging.error(f"Error getting monthly stats: {e}")
         raise HTTPException(status_code=500, detail="Failed to get monthly stats")
 
+@api_router.get("/stats/calendar")
+async def get_calendar_heatmap(year: Optional[int] = None, month: Optional[int] = None):
+    """Get daily data for calendar heatmap visualization"""
+    try:
+        # Default to current month if not specified
+        if not year or not month:
+            now = datetime.utcnow()
+            year = year or now.year
+            month = month or now.month
+        
+        # Get first and last day of the month
+        first_day = date(year, month, 1)
+        if month == 12:
+            last_day = date(year + 1, 1, 1) - timedelta(days=1)
+        else:
+            last_day = date(year, month + 1, 1) - timedelta(days=1)
+        
+        # Get daily aggregation for the month
+        pipeline = [
+            {
+                "$match": {
+                    "timestamp": {
+                        "$gte": datetime.combine(first_day, datetime.min.time()),
+                        "$lte": datetime.combine(last_day, datetime.max.time())
+                    }
+                }
+            },
+            {
+                "$group": {
+                    "_id": {
+                        "$dateToString": {
+                            "format": "%Y-%m-%d",
+                            "date": "$timestamp"
+                        }
+                    },
+                    "count": {"$sum": 1}
+                }
+            },
+            {
+                "$sort": {"_id": 1}
+            }
+        ]
+        
+        results = await db.bad_deeds.aggregate(pipeline).to_list(31)  # Max 31 days in a month
+        results_dict = {result["_id"]: result["count"] for result in results}
+        
+        # Create calendar data
+        calendar_data = []
+        current_date = first_day
+        
+        while current_date <= last_day:
+            date_str = current_date.isoformat()
+            count = results_dict.get(date_str, 0)
+            
+            calendar_data.append({
+                "date": date_str,
+                "day": current_date.day,
+                "count": count,
+                "day_of_week": current_date.strftime("%A"),
+                "day_of_week_short": current_date.strftime("%a")
+            })
+            current_date += timedelta(days=1)
+        
+        # Calculate statistics for the month
+        total_bad_deeds = sum(day["count"] for day in calendar_data)
+        days_with_bad_deeds = len([day for day in calendar_data if day["count"] > 0])
+        clean_days = len(calendar_data) - days_with_bad_deeds
+        worst_day = max(calendar_data, key=lambda x: x["count"]) if calendar_data else None
+        
+        # Get calendar layout info (which day of week the month starts)
+        month_start_day = first_day.weekday()  # 0=Monday, 6=Sunday
+        
+        return {
+            "year": year,
+            "month": month,
+            "month_name": first_day.strftime("%B %Y"),
+            "calendar_data": calendar_data,
+            "month_start_day": month_start_day,
+            "stats": {
+                "total_bad_deeds": total_bad_deeds,
+                "days_with_bad_deeds": days_with_bad_deeds,
+                "clean_days": clean_days,
+                "worst_day": {
+                    "date": worst_day["date"],
+                    "count": worst_day["count"],
+                    "day": worst_day["day"]
+                } if worst_day and worst_day["count"] > 0 else None
+            }
+        }
+    except Exception as e:
+        logging.error(f"Error getting calendar heatmap: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get calendar heatmap")
+
 
 # Include the router in the main app
 app.include_router(api_router)
